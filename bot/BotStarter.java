@@ -30,84 +30,80 @@ import java.util.Random;
  */
 
 public class BotStarter {
-	/*def is_winner(board, player):
-	# check by row
-	for i in range(N):
-		found = True
 
-		for j in range(N):
-			if board[i][j]!=player:
-				found = False
-				break
+	public static int[] winningPatterns = { 0b111000000, 0b000111000, 0b000000111, // rows
+			0b100100100, 0b010010010, 0b001001001, // cols
+			0b100010001, 0b001010100 // diagonals
+	};
 
-		if found:
-			return True
-	
-	# check by column
-	for i in range(N):
-		found = True
-
-		for j in range(N):
-			if board[j][i]!=player:
-				found = False
-				break
-
-		if found:
-			return True
-	
-	found = True
-
-	# check diagnol
-	for i in range(N):
-		if board[i][i]!=player:
-			found = False
-			break
-
-	if found:
-		return True
-
-	found = True
-
-	# check diagnol
-	for i in range(N):
-		if board[i][N-i-1]!=player:
-			found = False
-			break
-
-	if found:
-		return True
-	
-	return False*/
-	// Function decides if player in winner
-	public boolean isPlayerWinner(int[][] board, int player){
-		//check rows
-		boolean yes;
-		for(int i = 0; i < 3; i++) {
-			yes = true;
-			for(int j = 0)
+	public static boolean winner(int[][] board, int player) {
+		int pattern = 0b000000000; // 9-bit pattern for the 9 cells
+		for (int row = 0; row < 3; ++row) {
+			for (int col = 0; col < 3; ++col) {
+				if (board[row][col] == player)
+					pattern |= (1 << (row * 3 + col));
+			}
 		}
-		# check by row
-		for i in range(N):
-			found = True
+		for (int winningPattern : winningPatterns)
+			if ((pattern & winningPattern) == winningPattern)
+				return true;
+		return false;
+	}
 
-			for j in range(N):
-				if board[i][j]!=player:
-					found = False
-					break
+	// Function decides if player in winner
+	public static boolean isPlayerWinner(int[][] board, int player) {
 
-			if found:
-				return True
+		// check rows and columns
+		boolean win = true;
+		for (int i = 0; i < 3; i++) {
+			win = true;
+			for (int j = 0; j < 3; j++) {
+				if (board[i][j] != player)
+					win = false;
+					break;
+			}
+		}
+
+		if (win)
+			return true;
+		
+		for (int i = 0; i < 3; i++) {
+			win = true;
+			for (int j = 0; j < 3; j++) {
+				if (board[j][i] != player)
+					win = false;
+					break;
+			}
+		}
+		if (win)
+			return true;
+
+		// check diagonals
+		win = true;
+		for (int i = 0; i < 3; i++)
+			if (board[i][i] != player)
+				win = false;	
+		if (win)
+			return true;
+		
+		win = true;
+		for (int i = 0; i < 3; i++)
+			if (board[i][2-i] != player)
+				win = false;	
+		if (win)
+			return true;
+		
 		return false;
 	}
 
 	// Genereaza o matr de 3x3 in care adauga si mutarea curenta.
-	public int[][] getBoard(int x, int y, Field field) {
+	public static int[][] getBoard(int x, int y, Field field) {
 		int[][] board = new int[3][3];
 		int k1, k2;
 		k1 = 0;
-		for (int i = x / 3; i < x / 3 + 3; i++) {
+		for (int i = x - (x % 3); i < (x - (x % 3) + 3); i++) {
 			k2 = 0;
-			for (int j = y / 3; j < y / 3 + 3; j++) {
+			for (int j = y - (y % 3); j < (y - (y % 3) + 3); j++) {
 				board[k1][k2] = field.mBoard[i][j];
 				k2++;
 			}
@@ -119,13 +115,15 @@ public class BotStarter {
 	}
 
 	// Functia asta ar trebui sa verifice daca mutarea castiga un patrat.
-	// NEFUNCTIONAL :(
 	public Move checkWonTile(Field field, ArrayList<Move> moves) {
 		int x, y;
+		int[][] board;
 		for (int k = 0; k < moves.size(); k++) {
 			x = moves.get(k).getX();
 			y = moves.get(k).getY();
-			int[][] board = getBoard(x, y, field);
+			board = getBoard(x, y, field); // Make it better
+			if (winner(board, BotParser.mBotId))
+				return moves.get(k);
 		}
 		return null;
 	}
@@ -151,8 +149,8 @@ public class BotStarter {
 		// Daca poti sa pui in mai multe patrate pune in centru
 		if (field.mMacroboard[1][1] == -1) {
 			moves = field.getAvailableMovesTile(1, 1);
-			m = moves.get(r.nextInt(moves.size()));
-			return m;
+			if ((m = checkWonTile(field, moves)) != null)
+				return m;
 		}
 		moves = field.getAvailableMoves();
 		// Alege casuta care castiga patratul
@@ -160,14 +158,40 @@ public class BotStarter {
 			return m;
 		// Random, dar nu centrul patratului
 		while (true) {
-			m = moves.get(0);//r.nextInt(moves.size())); /* get random move from available moves */
+			// IMPLEMENT ALARM!!!
+			m = moves.get(r.nextInt(
+					moves.size())); /* get random move from available moves */
 			if ((m.getX() % 3 != 1 || m.getY() % 3 != 1) || moves.size() == 1)
 				return m;
 		}
 	}
 
 	public static void main(String[] args) {
-		BotParser parser = new BotParser(new BotStarter());
-		parser.run();
+		 BotParser parser = new BotParser(new BotStarter());
+		 parser.run();
+
+		// Test board
+	/*	int[][] brd = { { 0, 0, 0, 0, 0, 0, 1, 0, 1 }, 
+						{ 0, 2, 0, 1, 0, 0, 0, 0, 0 }, 
+						{ 2, 0, 0, 0, 0, 0, 1, 0, 0 },
+						{ 0, 0, 0, 1, 0, 0, 0, 0, 0 }, 
+						{ 0, 2, 0, 1, 0, 0, 0, 0, 0 }, 
+						{ 0, 0, 0, 1, 0, 1, 2, 0, 0 },
+						{ 0, 0, 0, 1, 0, 2, 0, 1, 0 }, 
+						{ 0, 0, 0, 1, 0, 1, 0, 0, 0 }, 
+						{ 0, 0, 0, 1, 0, 0, 0, 0, 0 } };
+		Field field = new Field();
+		field.mBoard = brd;
+		// BotParser parser = new BotParser();
+		BotParser.mBotId = 1;
+		int[][] matrix = getBoard(1, 7, field);
+		for (int i = 0; i < matrix.length; i++) {
+			for (int j = 0; j < matrix[0].length; j++) {
+				System.out.print(matrix[i][j] + " ");
+			}
+			System.out.print("\n");
+		}
+		System.out.println(isPlayerWinner(matrix, 1));
+		System.out.println(winner(matrix, 1));*/
 	}
 }

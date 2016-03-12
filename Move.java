@@ -15,28 +15,59 @@
 //    For the full copyright and license information, please view the LICENSE
 //    file that was distributed with this source code.
 
-package bot;
+//package bot;
 
 /**
  * Move class
- * 
+ * <p/>
  * Stores a move.
- * 
+ *
  * @author Jim van Eeden <jim@starapple.nl>, Joost de Meij <joost@starapple.nl>
  */
 
 public class Move {
-	int mX, mY;
-	
-	public Move() {
-	}
-	
-	public Move(int x, int y) {
-		mX = x;
-		mY = y;
-	}
-	
-	public int getX() { return mX; }
-	public int getY() { return mY; }
-	
+    int mX, mY;
+
+    public Move() {
+    }
+
+    public Move(int x, int y) {
+        mX = x;
+        mY = y;
+    }
+
+    public int getX() {
+        return mX;
+    }
+
+    public int getY() {
+        return mY;
+    }
+
+    @Override
+    public String toString() {
+        return "Move{" +
+                "mX=" + mX +
+                ", mY=" + mY +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Move move = (Move) o;
+
+        if (mX != move.mX) return false;
+        return mY == move.mY;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mX;
+        result = 31 * result + mY;
+        return result;
+    }
 }

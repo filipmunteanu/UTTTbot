@@ -1,4 +1,3 @@
-
 // // Copyright 2016 theaigames.com (developers@theaigames.com)
 
 //    Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,210 +15,209 @@
 //    For the full copyright and license information, please view the LICENSE
 //    file that was distributed with this source code.
 
-package bot;
+//package bot;
 
 import java.util.ArrayList;
 
 /**
  * Field class
- * 
- * Handles everything that has to do with the field, such 
+ * <p/>
+ * Handles everything that has to do with the field, such
  * as storing the current state and performing calculations
  * on the field.
- * 
+ *
  * @author Jim van Eeden <jim@starapple.nl>, Joost de Meij <joost@starapple.nl>
  */
 
 public class Field {
     private int mRoundNr;
     private int mMoveNr;
-	private int[][] mBoard;
-	private int[][] mMacroboard;
+    int[][] mBoard;
+    int[][] mMacroboard;
 
-	public int[][] getmMacroboard() {
-		return mMacroboard;
-	}
+    private final int COLS = 9, ROWS = 9;
+    private String mLastError = "";
 
-	public void setmMacroboard(int[][] mMacroboard) {
-		this.mMacroboard = mMacroboard;
-	}
+    public Field() {
+        mBoard = new int[COLS][ROWS];
+        mMacroboard = new int[COLS / 3][ROWS / 3];
+        clearBoard();
+    }
 
-	private final int COLS = 9, ROWS = 9;
-	private String mLastError = "";
-	
-	public Field() {
-		mBoard = new int[COLS][ROWS];
-		mMacroboard = new int[COLS / 3][ROWS / 3];
-		clearBoard();
-	}
-	
-	/**
-	 * Parse data about the game given by the engine
-	 * @param key : type of data given
-	 * @param value : value
-	 */
-	public void parseGameData(String key, String value) {
-	    if (key.equals("round")) {
-	        mRoundNr = Integer.parseInt(value);
-	    } else if (key.equals("move")) {
-	        mMoveNr = Integer.parseInt(value);
-	    } else if (key.equals("field")) {
+    /**
+     * Parse data about the game given by the engine
+     *
+     * @param key   : type of data given
+     * @param value : value
+     */
+    public void parseGameData(String key, String value) {
+        if (key.equals("round")) {
+            mRoundNr = Integer.parseInt(value);
+        } else if (key.equals("move")) {
+            mMoveNr = Integer.parseInt(value);
+        } else if (key.equals("field")) {
             parseFromString(value); /* Parse Field with data */
         } else if (key.equals("macroboard")) {
             parseMacroboardFromString(value); /* Parse macroboard with data */
         }
-	}
-	
-	/**
-	 * Initialise field from comma separated String
-	 * @param String : 
-	 */
-	public void parseFromString(String s) {
-	    System.err.println("Move " + mMoveNr);
-		s = s.replace(";", ",");
-		String[] r = s.split(",");
-		int counter = 0;
-		for (int y = 0; y < ROWS; y++) {
-			for (int x = 0; x < COLS; x++) {
-				mBoard[x][y] = Integer.parseInt(r[counter]); 
-				counter++;
-			}
-		}
-	}
-	
-	/**
-	 * Initialise macroboard from comma separated String
-	 * @param String : 
-	 */
-	public void parseMacroboardFromString(String s) {
-		String[] r = s.split(",");
-		int counter = 0;
-		for (int y = 0; y < 3; y++) {
-			for (int x = 0; x < 3; x++) {
-				mMacroboard[x][y] = Integer.parseInt(r[counter]);
-				counter++;
-			}
-		}
-	}
-	
-	public void clearBoard() {
-		for (int x = 0; x < COLS; x++) {
-			for (int y = 0; y < ROWS; y++) {
-				mBoard[x][y] = 0;
-			}
-		}
-	}
+    }
 
-	public ArrayList<Move> getAvailableMoves() {
-	    ArrayList<Move> moves = new ArrayList<Move>();
-		
-		for (int y = 0; y < ROWS; y++) {
+    /**
+     * Initialise field from comma separated String
+     *
+     * @param s:
+     */
+    public void parseFromString(String s) {
+        System.err.println("Move " + mMoveNr);
+        s = s.replace(";", ",");
+        String[] r = s.split(",");
+        int counter = 0;
+        for (int y = 0; y < ROWS; y++) {
             for (int x = 0; x < COLS; x++) {
-                if (isInActiveMicroboard(x, y) && mBoard[x][y] == 0) {
+                mBoard[x][y] = Integer.parseInt(r[counter]);
+                counter++;
+            }
+        }
+    }
+
+    /**
+     * Initialise macroboard from comma separated String
+     *
+     * @param s :
+     */
+    public void parseMacroboardFromString(String s) {
+        String[] r = s.split(",");
+        int counter = 0;
+        for (int y = 0; y < 3; y++) {
+            for (int x = 0; x < 3; x++) {
+                mMacroboard[x][y] = Integer.parseInt(r[counter]);
+                counter++;
+            }
+        }
+    }
+
+    public void clearBoard() {
+        for (int x = 0; x < COLS; x++) {
+            for (int y = 0; y < ROWS; y++) {
+                mBoard[x][y] = 0;
+            }
+        }
+    }
+
+    public ArrayList<Move> getAvailableMoves() {
+        ArrayList<Move> moves = new ArrayList<Move>();
+
+        for (int y = 0; y < ROWS; y++) {
+            for (int x = 0; x < COLS; x++) {
+                //  if the current microboard in the macroboard is active
+                //  and if the current cell in the microboard is empty,
+                //  then add the current possible move to the list
+                if (isInActiveMicroboard(x, y) && isEmptyCell(x, y)) {
                     moves.add(new Move(x, y));
                 }
             }
         }
 
-		return moves;
-	}
-	
-	public ArrayList<Move> getAvailableMovesTile(int cX, int cY) {
-	    ArrayList<Move> moves = new ArrayList<Move>();
-		
-	    for(int x = cX*3; x < cX*3+3; x++) {
-	    	for(int y = cY*3; y < cY*3+3; y++) {
-                if (mBoard[x][y] == 0) {
-                    moves.add(new Move(x, y));
+        return moves;
+    }
+
+    public Boolean isInActiveMicroboard(int x, int y) {
+        return mMacroboard[(int) x / 3][(int) y / 3] == -1;
+    }
+
+    public Boolean isInActiveSquare(int x, int y) {
+        return mMacroboard[x][y] == -1;
+    }
+
+    public Boolean isEmptyCell(int x, int y) {
+        return mBoard[x][y] == 0;
+    }
+
+    /**
+     * Returns reason why addMove returns false
+     *
+     * @param args :
+     * @return : reason why addMove returns false
+     */
+    public String getLastError() {
+        return mLastError;
+    }
+
+
+    @Override
+    /**
+     * Creates comma separated String with player ids for the microboards.
+     * @param args :
+     * @return : String with player names for every cell, or 'empty' when cell is empty.
+     */
+    public String toString() {
+        String r = "";
+        int counter = 0;
+        for (int y = 0; y < ROWS; y++) {
+            for (int x = 0; x < COLS; x++) {
+                if (counter > 0) {
+                    r += ",";
+                }
+                r += mBoard[x][y];
+                counter++;
+            }
+        }
+        return r;
+    }
+
+    /**
+     * Checks whether the field is full
+     *
+     * @param args :
+     * @return : Returns true when field is full, otherwise returns false.
+     */
+    public boolean isFull() {
+        for (int x = 0; x < COLS; x++)
+            for (int y = 0; y < ROWS; y++)
+                if (mBoard[x][y] == 0)
+                    return false; // At least one cell is not filled
+        // All cells are filled
+        return true;
+    }
+
+    public int getNrColumns() {
+        return COLS;
+    }
+
+    public int getNrRows() {
+        return ROWS;
+    }
+
+    public boolean isEmpty() {
+        for (int x = 0; x < COLS; x++) {
+            for (int y = 0; y < ROWS; y++) {
+                if (mBoard[x][y] > 0) {
+                    return false;
                 }
             }
         }
+        return true;
+    }
 
-		return moves;
-	}
-	
-	public int[][] getmBoard() {
-		return mBoard;
-	}
+    public int getRoundNr() {
+        return this.mRoundNr;
+    }
 
-	public void setmBoard(int[][] mBoard) {
-		this.mBoard = mBoard;
-	}
+    public int[][] getBoard() {
+        return this.mBoard;
+    }
 
-	public Boolean isInActiveMicroboard(int x, int y) {
-	    return mMacroboard[(int) x/3][(int) y/3] == -1;
-	}
-	
-	/**
-	 * Returns reason why addMove returns false
-	 * @param args : 
-	 * @return : reason why addMove returns false
-	 */
-	public String getLastError() {
-		return mLastError;
-	}
+    public int[][] getMacroboard() {
+        return this.mMacroboard;
+    }
 
-	
-	@Override
-	/**
-	 * Creates comma separated String with player ids for the microboards.
-	 * @param args : 
-	 * @return : String with player names for every cell, or 'empty' when cell is empty.
-	 */
-	public String toString() {
-		String r = "";
-		int counter = 0;
-		for (int y = 0; y < ROWS; y++) {
-			for (int x = 0; x < COLS; x++) {
-				if (counter > 0) {
-					r += ",";
-				}
-				r += mBoard[x][y];
-				counter++;
-			}
-		}
-		return r;
-	}
-	
-	/**
-	 * Checks whether the field is full
-	 * @param args : 
-	 * @return : Returns true when field is full, otherwise returns false.
-	 */
-	public boolean isFull() {
-		for (int x = 0; x < COLS; x++)
-		  for (int y = 0; y < ROWS; y++)
-		    if (mBoard[x][y] == 0)
-		      return false; // At least one cell is not filled
-		// All cells are filled
-		return true;
-	}
-	
-	public int getNrColumns() {
-		return COLS;
-	}
-	
-	public int getNrRows() {
-		return ROWS;
-	}
-
-	public boolean isEmpty() {
-		for (int x = 0; x < COLS; x++) {
-			  for (int y = 0; y < ROWS; y++) {
-				  if (mBoard[x][y] > 0) {
-					  return false;
-				  }
-			  }
-		}
-		return true;
-	}
-	
-	/**
-	 * Returns the player id on given column and row
-	 * @param args : int column, int row
-	 * @return : int
-	 */
-	public int getPlayerId(int column, int row) {
-		return mBoard[column][row];
-	}
+    /**
+     * Returns the player id on given column and row
+     *
+     * @param args : int column, int row
+     * @return : int
+     */
+    public int getPlayerId(int column, int row) {
+        return mBoard[column][row];
+    }
 }

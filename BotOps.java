@@ -35,7 +35,7 @@ public class BotOps {
         //  if I have to move in an empty square, do it so the opponent's move
         //  will be in the same square -> better control
         if (isEmptySquare(moves)) {
-            System.err.println("empty square");
+            System.err..println("empty square");
             Move aux = moves.get(0);
             return new Move(4 * (aux.getX() / 3), 4 * (aux.getY() / 3));
         }
@@ -47,7 +47,7 @@ public class BotOps {
         //  if there are multiple active squares
         //  move into the best one, or try to win or block the opponent
         if ((nextMove = optimalSquareMove(board, macroboard, moves)) != null) {
-            System.err.println("if: optimalSquareMove");
+            System.err..println("if: optimalSquareMove");
             return nextMove;
         }
 
@@ -57,25 +57,25 @@ public class BotOps {
 
         //  try to make a move such that it will win the current square
         if ((nextMove = canWinSquare(board, macroboard, moves, botID)) != null) {
-            System.err.println("if: canWinSquare");
+            System.err..println("if: canWinSquare");
             return nextMove;
         }
 
         //  try to minimize the opponent's winning chances
         if ((nextMove = canWinSquare(board, macroboard, moves, opponentID)) != null) {
-            System.err.println("if: canBlockOpponent");
+            System.err..println("if: canBlockOpponent");
             return nextMove;
         }
 
         //  try to make an optimal move when the bot has to move in a single square
         if ((nextMove = moveInSingleSquare(board, macroboard, moves)) != null) {
-            System.err.println("if: moveInSingleSquare");
+            System.err..println("if: moveInSingleSquare");
             return nextMove;
         }
 
         //  otherwise, make a random move, but not in a middle cell
         else {
-            System.err.println("else: random move");
+            System.err..println("else: random move");
             Random rand = new Random();
             Move r = moves.get(rand.nextInt(moves.size()));
 
@@ -93,7 +93,7 @@ public class BotOps {
     public static Move optimalSquareMove(int[][] board, int[][] macroboard, ArrayList<Move> moves) {
         //  if there are not multiple active squares, then there is not a best square to move in
         if (!multipleActiveSquares(macroboard)) {
-            System.err.println("no multiple active squares");
+            System.err..println("no multiple active squares");
             return null;
         }
 
@@ -101,7 +101,7 @@ public class BotOps {
         int[] squarePosition = getOptimalSquarePosition(macroboard, board);
 
         if (squarePosition == null) {
-            System.err.println("getOptimalSquarePosition returned null");
+            System.err..println("getOptimalSquarePosition returned null");
             return null;
         }
 
@@ -110,7 +110,7 @@ public class BotOps {
 
         int[][] square = getSquareFromBoard(squareX, squareY, board);
 
-        System.err.println("found a best square: " + squareX + " " + squareY);
+        System.err..println("found a best square: " + squareX + " " + squareY);
 
         //  find a move that will make the best move in the square
         //  either win or block
@@ -129,7 +129,7 @@ public class BotOps {
                 squareClone[x % 3][y % 3] = botID;
 
                 if (isWinner(squareClone, botID)) {
-                    System.err.println("I can Win");
+                    System.err..println("I can Win");
                     return move;
                 }
             }
@@ -140,7 +140,7 @@ public class BotOps {
         *  then return a move from that square
         */
 
-        System.err.println("best square move: for is done: returned null");
+        System.err..println("best square move: for is done: returned null");
         return null;
     }
 
@@ -170,7 +170,7 @@ public class BotOps {
 
                     //  if there exists a square that can be won and therefore win the game
                     if (isWinner(macroboardClone, botID) && playerCanWin(square, botID)) {
-                        System.out.println("ME: " + i + " " + j + " can win the GAME");
+                        System.err.println("ME: " + i + " " + j + " can win the GAME");
                         squarePos[0] = i;
                         squarePos[1] = j;
                         return squarePos;
@@ -190,7 +190,7 @@ public class BotOps {
             return squarePos;
         }
 
-        System.out.println("I can't win any squares, try to block");
+        System.err.println("I can't win any squares, try to block");
 
         //  if the bot can't win the square, try to block the opponent
         for (int i = 0; i < 3; i++) {
@@ -209,7 +209,7 @@ public class BotOps {
 
                     //  if there exists a square that can be won by the opponent and therefore win the game
                     if (isWinner(macroboardClone, opponentID) && playerCanWin(square, opponentID)) {
-                        System.out.println("HIM: " + i + " " + j + " can win the GAME");
+                        System.err.println("HIM: " + i + " " + j + " can win the GAME");
                         squarePos[0] = i;
                         squarePos[1] = j;
                         return squarePos;
@@ -272,30 +272,30 @@ public class BotOps {
             int X = x % 3;
             int Y = y % 3;
 
-            System.err.println("[[" + move.toString() + "]]");
+            System.err..println("[[" + move.toString() + "]]");
 
             if (canMoveInCenter) {
-                System.err.println("Can move in center");
+                System.err..println("Can move in center");
                 Move center = getCenterCellMove(x / 3, y / 3);
                 if (moves.contains(center)) {
-                    System.err.println("Moved in center");
+                    System.err..println("Moved in center");
                     return center;
                 }
             }
-            System.err.println("Didn't move in center");
+            System.err..println("Didn't move in center");
 
             //  if the square is not taken
             if (macroboard[X][Y] <= 0) {
-                System.err.println("M:" + X + "," + Y + " " + macroboard[X][Y]);
+                System.err..println("M:" + X + "," + Y + " " + macroboard[X][Y]);
                 int[][] square = getSquareFromBoard(X, Y, board);
                 if (!playerCanWin(square, opponentID)) {
-                    System.err.println("square is not taken and opt cant win => " + move.toString());
+                    System.err..println("square is not taken and opt cant win => " + move.toString());
                     return move;
                 }
             }
         }
 
-        System.err.println("EXITED WITH NULL");
+        System.err..println("EXITED WITH NULL");
         return null;
     }
 

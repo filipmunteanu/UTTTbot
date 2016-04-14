@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Random;
 
 /**
  * Created by Alex on 05/03/2016.
@@ -9,6 +8,8 @@ public class BotOps {
     // TODO: 08/03/2016 : check for inconsistencies
     public static int botID = BotParser.mBotId;
     public static int opponentID = (botID == 1) ? (2) : (1);
+
+    public static ArrayList<Move> rootsScores = new ArrayList<>();
 
     public static int[] winningPatterns = {
             0b111000000, 0b000111000, 0b000000111, // rows
@@ -20,6 +21,7 @@ public class BotOps {
     public static Move getMove(Field field, ArrayList<Move> moves) {
         int[][] board = field.mBoard;
         int[][] macroboard = field.mMacroboard;
+
         Move nextMove;
 
         /* Initial moves */
@@ -41,54 +43,133 @@ public class BotOps {
         }
 
 
+        //  TODO: call minimax
+        //// FIXME: 13.04.2016 crapa cand pot sa mut in mai multe patrate
 
-        /* Deal with multiple actives squares (two or more -1 entries in the macroboard */
+        minimax(field, 0, 6, botID);
+        System.err.println(rootsScores.size());
+        nextMove = bestMoveFromMinimax();
 
-        //  if there are multiple active squares
-        //  move into the best one, or try to win or block the opponent
-        if ((nextMove = optimalSquareMove(board, macroboard, moves)) != null) {
-            System.err.println("if: optimalSquareMove");
-            return nextMove;
-        }
-
-
-
-        /* Deal with a single square (only one -1 entry in the macroboard) */
-
-        //  try to make a move such that it will win the current square
-        if ((nextMove = canWinSquare(board, moves, botID)) != null) {
-            System.err.println("if: canWinSquare");
-            return nextMove;
-        }
-
-        //  try to minimize the opponent's winning chances
-        if ((nextMove = canWinSquare(board, moves, opponentID)) != null) {
-            System.err.println("if: canBlockOpponent");
-            return nextMove;
-        }
-
-        //  try to make an optimal move when the bot has to move in a single square
-        if ((nextMove = moveInSingleSquare(board, macroboard, moves)) != null) {
-            System.err.println("if: moveInSingleSquare");
-            return nextMove;
-        }
-
-        //  otherwise, make a random move, but not in a middle cell
-        else {
-            System.err.println("else: random move");
-            Random rand = new Random();
-            Move r = moves.get(rand.nextInt(moves.size()));
-
-            while (isMiddleMove(r)) {
-                r = moves.get(rand.nextInt(moves.size()));
-            }
-
-            return r;
-        }
+        return nextMove;
     }
 
 
-    /* Algorithms */
+    /* Minimax */
+    public static boolean gameHasEnded(Field field) {
+        return isWinner(field.mMacroboard, botID) ||
+                isWinner(field.mMacroboard, opponentID) ||
+                field.getAvailableMoves().size() == 0;
+    }
+
+    public static int evaluate(Field field) {
+        if (isWinner(field.mMacroboard, botID))
+            return Integer.MAX_VALUE;
+        if (isWinner(field.mMacroboard, opponentID))
+            return Integer.MIN_VALUE;
+
+        //placeholder: countMine - countHis
+        int mine = 0, his = 0;
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                if (field.mBoard[i][j] == botID)
+                    mine++;
+                else if (field.mBoard[i][j] == opponentID)
+                    his++;
+            }
+        }
+
+        return mine - his;
+
+    }
+
+    //--
+    //--
+
+    public static Move bestMoveFromMinimax() {
+        int max = Integer.MIN_VALUE;
+        int index = 0;
+
+        System.err.println(rootsScores);
+
+        for (int i = 0; i < rootsScores.size(); i++) {
+            if (max < rootsScores.get(i).score) {
+                max = rootsScores.get(i).score;
+                index = i;
+            }
+        }
+
+        int x = rootsScores.get(index).x;
+        int y = rootsScores.get(index).y;
+
+        Move m = new Move(x, y);
+        rootsScores.clear();
+
+        return m;
+    }
+
+    public static int maxFrom(ArrayList<Integer> scores) {
+        int max = Integer.MIN_VALUE;
+
+        for (Integer s : scores) {
+            if (s > max) {
+                max = s;
+            }
+        }
+
+        return max;
+    }
+
+    public static int minFrom(ArrayList<Integer> scores) {
+        int min = Integer.MAX_VALUE;
+
+        for (Integer s : scores) {
+            if (s < min) {
+                min = s;
+            }
+        }
+
+        return min;
+    }
+
+
+    //// FIXME: 13.04.2016 seriously fix me
+    public static int minimax(Field field, int depth, int maxDepth, int player) {
+        if (gameHasEnded(field) || depth == maxDepth)
+            return evaluate(field);
+
+        ArrayList<Integer> scores = new ArrayList<>();
+
+        for (Move move : field.getAvailableMoves()) {
+            //  my turn
+            if (player == botID) {
+                field.mBoard[move.x][move.y] = botID;
+                int score = minimax(field, depth + 1, maxDepth, opponentID);
+                scores.add(score);
+
+                if (depth == 0) {
+                    rootsScores.add(new Move(move.x, move.y, score));
+                }
+            }
+
+            //  his turn
+            else if (player == opponentID) {
+                field.mBoard[move.x][move.y] = opponentID;
+                int score = minimax(field, depth + 1, maxDepth, botID);
+                scores.add(score);
+            }
+
+            //  reset move
+            field.mBoard[move.x][move.y] = 0;
+        }
+
+        if (player == botID)
+            return maxFrom(scores);
+        else return minFrom(scores);
+    }
+
+
+
+    /* Non-minimax */
 
     public static Move optimalSquareMove(int[][] board, int[][] macroboard, ArrayList<Move> moves) {
         //  if there are not multiple active squares, then there is not a best square to move in
